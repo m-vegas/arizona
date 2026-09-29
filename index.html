@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vegas+ — расширение для Arizona RP</title>
+<meta name="description" content="Vegas+ — мониторинг жалоб, статистика, медали и Telegram-уведомления для forum.arizona-rp.com">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg-0: #070a13;
+    --bg-1: #0a0e1a;
+    --bg-2: #0f1424;
+    --bg-3: #161c2e;
+    --border: #1e2740;
+    --border-2: #2a3352;
+    --text: #e8ecf5;
+    --text-dim: #8b93a8;
+    --text-mute: #4d5570;
+    --accent: #3b82f6;
+    --accent-2: #60a5fa;
+    --accent-glow: rgba(59,130,246,.5);
+    --tg: #29b6f6;
+    --flame: #f97316;
+    --success: #34d399;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg-1);
+    color: var(--text);
+    font: 15px/1.6 var(--font);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+
+body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+        radial-gradient(ellipse 60% 40% at 15% 0%, rgba(59,130,246,.18), transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 20%, rgba(139,92,246,.14), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(249,115,22,.08), transparent 60%);
+}
+
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative; z-index: 1;
+}
+
+section { padding: 80px 0; position: relative; z-index: 1; }
+
+header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10, 14, 26, .82);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border-bottom: 1px solid var(--border);
+}
+
+.nav {
+    max-width: 1100px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px;
+}
+
+.logo {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: inherit;
+}
+
+.logo-icon {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px -4px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.logo-icon svg { width: 26px; height: 26px; }
+
+.logo-text { display: flex; flex-direction: column; gap: 1px; }
+.logo-title {
+    font-size: 15px; font-weight: 700; color: #fff;
+    letter-spacing: -.01em; line-height: 1;
+}
+.logo-ver {
+    font-size: 9px; font-weight: 700; color: var(--text-dim);
+    background: var(--bg-2); padding: 2px 6px; border-radius: 5px;
+    letter-spacing: .05em; border: 1px solid var(--border);
+    width: fit-content;
+}
+
+.nav-links { display: flex; gap: 24px; align-items: center; }
+.nav-links a {
+    color: var(--text-dim); font-size: 13px; font-weight: 500;
+    text-decoration: none; transition: color .15s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-btn {
+    padding: 8px 16px; border-radius: 9px;
+    background: var(--accent); border: 1px solid var(--accent);
+    color: #fff; font: inherit; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: all .15s;
+    box-shadow: 0 6px 16px -4px var(--accent-glow);
+}
+.nav-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+@media (max-width: 700px) {
+    .nav-links { display: none; }
+}
+
+
+.hero {
+    padding: 100px 0 80px;
+    text-align: center;
+}
+
+.hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 30px;
+    background: rgba(59,130,246,.1);
+    border: 1px solid rgba(59,130,246,.3);
+    font-size: 12px; font-weight: 600;
+    color: var(--accent-2);
+    margin-bottom: 24px;
+}
+.hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+.hero h1 {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    letter-spacing: -.03em;
+    line-height: 1.05;
+    margin-bottom: 22px;
+    background: linear-gradient(135deg, #fff 30%, #a78bfa 70%, #60a5fa);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+    font-size: 17px; color: var(--text-dim);
+    max-width: 640px; margin: 0 auto 36px;
+    line-height: 1.7;
+}
+
+.hero-actions {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 60px;
+}
+
+.btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 28px; border-radius: 12px;
+    font: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: all .2s cubic-bezier(.4,0,.2,1);
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--accent), #2563eb);
+    color: #fff; border-color: var(--accent);
+    box-shadow:
+        0 12px 28px -8px var(--accent-glow),
+        inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 16px 36px -8px var(--accent-glow),
+        0 0 40px -8px var(--accent-glow),
+        inset 0 1px 0 rgba(255,255,255,.15);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+    background: var(--bg-2);
+    color: var(--text); border-color: var(--border-2);
+}
+.btn-secondary:hover {
+    background: var(--bg-3); border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.mockup {
+    max-width: 900px; margin: 0 auto;
+    perspective: 1400px;
+}
+.mockup-frame {
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-2);
+    box-shadow:
+        0 40px 100px -20px rgba(0,0,0,.9),
+        0 0 0 1px rgba(255,255,255,.02),
+        0 0 80px -20px var(--accent-glow);
+    background: var(--bg-2);
+    transform: rotateX(4deg);
+    transition: transform .6s cubic-bezier(.4,0,.2,1);
+}
+.mockup:hover .mockup-frame { transform: rotateX(0); }
+
+.mockup-bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 16px;
+    background: var(--bg-0);
+    border-bottom: 1px solid var(--border);
+}
+.mockup-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #3a3f52;
+}
+.mockup-dot.r { background: #ef4444; }
+.mockup-dot.y { background: #f59e0b; }
+.mockup-dot.g { background: #22c55e; }
+
+.mockup-body {
+    aspect-ratio: 16 / 10;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(59,130,246,.15), transparent 50%),
+        radial-gradient(circle at 85% 85%, rgba(249,115,22,.1), transparent 50%),
+        var(--bg-1);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+
+
+.mock-ui {
+    width: 84%; height: 84%;
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 10px;
+    opacity: .9;
+}
+
+.mock-side {
+    background: var(--bg-0);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+}
+.mock-side-item {
+    height: 22px; border-radius: 5px;
+    background: var(--bg-3);
+}
+.mock-side-item.active {
+    background: rgba(59,130,246,.25);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.mock-main {
+    background: var(--bg-2);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
+}
+.mock-header {
+    height: 26px; border-radius: 6px;
+    background: var(--bg-3);
+}
+.mock-flame {
+    height: 60px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(249,115,22,.18), rgba(59,130,246,.12));
+    border: 1px solid rgba(249,115,22,.25);
+    display: flex; align-items: center;
+    padding: 0 14px;
+    font-size: 26px;
+}
+.mock-row {
+    height: 30px; border-radius: 6px;
+    background: var(--bg-3);
+    display: flex; align-items: center;
+    padding: 0 10px;
+    justify-content: space-between;
+}
+.mock-row::before {
+    content: ''; width: 50%; height: 8px; border-radius: 4px;
+    background: var(--border-2);
+}
+.mock-row::after {
+    content: ''; width: 24px; height: 18px; border-radius: 5px;
+    background: rgba(248,113,113,.18);
+}
+
+
+.section-head {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 56px;
+}
+.section-head h2 {
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #fff 40%, #a78bfa);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.section-head p {
+    color: var(--text-dim); font-size: 15.5px;
+}
+
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.feature {
+    padding: 26px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all .25s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    overflow: hidden;
+}
+.feature::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at top right, var(--accent-glow), transparent 60%);
+    opacity: 0; transition: opacity .3s;
+    pointer-events: none;
+}
+.feature:hover {
+    border-color: var(--border-2);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px -12px rgba(0,0,0,.6);
+}
+.feature:hover::before { opacity: .06; }
+
+.feature-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    box-shadow: 0 10px 22px -6px var(--accent-glow);
+    margin-bottom: 18px;
+    font-size: 22px;
+}
+.feature-icon svg { width: 24px; height: 24px; }
+
+.feature-icon.flame {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    box-shadow: 0 10px 22px -6px rgba(249,115,22,.5);
+}
+.feature-icon.tg {
+    background: linear-gradient(135deg, #29b6f6, #0288d1);
+    box-shadow: 0 10px 22px -6px rgba(41,182,246,.5);
+}
+.feature-icon.award {
+    background: linear-gradient(135deg, #eab308, #f59e0b);
+    box-shadow: 0 10px 22px -6px rgba(234,179,8,.5);
+}
+.feature-icon.themes {
+    background: linear-gradient(135deg, #a78bfa, #e879f9);
+    box-shadow: 0 10px 22px -6px rgba(232,121,249,.5);
+}
+
+.feature h3 {
+    font-size: 16.5px; font-weight: 700; color: #fff;
+    letter-spacing: -.01em; margin-bottom: 8px;
+}
+.feature p {
+    font-size: 13.5px; color: var(--text-dim); line-height: 1.6;
+}
+
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    counter-reset: step;
+}
+
+.step {
+    padding: 28px 24px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    position: relative;
+    transition: all .25s;
+}
+.step:hover { border-color: var(--accent); transform: translateY(-3px); }
+
+.step-num {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59,130,246,.15), rgba(139,92,246,.1));
+    border: 1px solid var(--accent);
+    color: var(--accent-2);
+    font-weight: 800; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+}
+.step h4 {
+    font-size: 15.5px; font-weight: 700; color: #fff;
+    margin-bottom: 8px;
+}
+.step p {
+    font-size: 13px; color: var(--text-dim); line-height: 1.55;
+}
+.step code {
+    display: inline-block;
+    padding: 2px 7px; border-radius: 5px;
+    background: var(--bg-0); border: 1px solid var(--border-2);
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 12px; color: var(--accent-2);
+    margin: 2px 0;
+    word-break: break-all;
+}
+
+
+.cta-box {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(59,130,246,.15), transparent 60%),
+        radial-gradient(circle at 80% 100%, rgba(249,115,22,.1), transparent 60%),
+        var(--bg-2);
+    border: 1px solid var(--border-2);
+    border-radius: 24px;
+    padding: 60px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.cta-box::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, var(--accent-glow), transparent 60%);
+    opacity: .1; pointer-events: none;
+}
+
+.cta-box h2 {
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 30%, #a78bfa);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+}
+.cta-box p {
+    color: var(--text-dim); font-size: 15.5px;
+    max-width: 480px; margin: 0 auto 32px;
+    position: relative;
+}
+.cta-box .btn { position: relative; }
+
+.cta-meta {
+    display: flex; justify-content: center; gap: 24px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+    position: relative;
+}
+.cta-meta-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12.5px; color: var(--text-mute);
+}
+.cta-meta-item svg { width: 14px; height: 14px; }
+
+/* ============ FAQ ============ */
+.faq {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.faq-item {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color .15s;
+}
+.faq-item[open] { border-color: var(--accent); }
+.faq-item summary {
+    padding: 18px 22px;
+    cursor: pointer;
+    font-weight: 600; font-size: 14.5px; color: var(--text);
+    list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    transition: background .15s;
+    user-select: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary:hover { background: var(--bg-3); }
+.faq-item summary::after {
+    content: '+';
+    font-size: 22px; font-weight: 300;
+    color: var(--text-mute);
+    transition: transform .3s, color .15s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.faq-item[open] summary::after {
+    transform: rotate(45deg);
+    color: var(--accent-2);
+}
+.faq-item .faq-answer {
+    padding: 0 22px 20px;
+    font-size: 13.5px; color: var(--text-dim); line-height: 1.65;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+}
+.faq-answer code {
+    display: inline-block;
+    padding: 2px 7px; border-radius: 5px;
+    background: var(--bg-0); border: 1px solid var(--border-2);
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 12px; color: var(--accent-2);
+}
+.faq-answer a { color: var(--accent-2); }
+
+
+footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    margin-top: 40px;
+    position: relative; z-index: 1;
+}
+.foot {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.foot-text {
+    font-size: 12.5px; color: var(--text-mute);
+}
+.foot-links { display: flex; gap: 20px; }
+.foot-links a {
+    font-size: 12.5px; color: var(--text-dim);
+    text-decoration: none; transition: color .15s;
+}
+.foot-links a:hover { color: var(--accent-2); }
+
+
+.toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-2);
+    border: 1px solid var(--border-2);
+    border-radius: 12px;
+    padding: 14px 20px;
+    color: var(--text); font-size: 13.5px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.7);
+    display: flex; align-items: center; gap: 12px;
+    z-index: 1000;
+    transition: transform .35s cubic-bezier(.4,0,.2,1);
+    max-width: calc(100% - 40px);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-icon {
+    width: 24px; height: 24px; border-radius: 7px;
+    background: var(--success); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.toast-icon svg { width: 14px; height: 14px; }
+.toast.error .toast-icon { background: #ef4444; }
+
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.hero > * { animation: fadeUp .7s cubic-bezier(.4,0,.2,1) backwards; }
+.hero-badge { animation-delay: .05s; }
+.hero h1 { animation-delay: .1s; }
+.hero p { animation-delay: .2s; }
+.hero-actions { animation-delay: .3s; }
+.mockup { animation: fadeUp .9s .4s cubic-bezier(.4,0,.2,1) backwards; }
+
+
+@media (max-width: 700px) {
+    section { padding: 60px 0; }
+    .hero { padding: 60px 0 50px; }
+    .cta-box { padding: 44px 24px; }
+    .btn { padding: 13px 22px; font-size: 13.5px; }
+    .mock-ui { grid-template-columns: 90px 1fr; }
+    .mock-side { padding: 8px; }
+    .mock-side-item { height: 16px; }
+}
+</style>
+</head>
+<body>
+
+
+<header>
+    <div class="nav">
+        <a href="#" class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M8 10h.01M16 10h.01"/>
+                    <path d="M8.5 14.5c.9 1 2.1 1.5 3.5 1.5s2.6-.5 3.5-1.5"/>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <div class="logo-title">Vegas+</div>
+                <div class="logo-ver">V1.0</div>
+            </div>
+        </a>
+        <nav class="nav-links">
+            <a href="#features">Возможности</a>
+            <a href="#install">Установка</a>
+            <a href="#faq">FAQ</a>
+        </nav>
+        <a href="#install" class="nav-btn">Установить</a>
+    </div>
+</header>
+
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            Поддержка XenForo 2.3 · Работает на Arizona RP
+        </div>
+        <h1>Мониторинг жалоб<br>для Arizona RP</h1>
+        <p>
+            Vegas+ отслеживает новые жалобы на твой ник, присылает уведомления
+            в Telegram и на рабочий стол, считает статистику и открывает медали
+            за активность. Всё в одном расширении для Chrome.
+        </p>
+        <div class="hero-actions">
+            <button class="btn btn-primary" onclick="downloadExtension()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Скачать Vegas+
+            </button>
+            <a href="#install" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                Как установить
+            </a>
+        </div>
+
+        <div class="mockup">
+            <div class="mockup-frame">
+                <div class="mockup-bar">
+                    <span class="mockup-dot r"></span>
+                    <span class="mockup-dot y"></span>
+                    <span class="mockup-dot g"></span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mock-ui">
+                        <div class="mock-side">
+                            <div class="mock-side-item active"></div>
+                            <div class="mock-side-item"></div>
+                            <div class="mock-side-item"></div>
+                            <div class="mock-side-item"></div>
+                            <div class="mock-side-item"></div>
+                            <div class="mock-side-item"></div>
+                        </div>
+                        <div class="mock-main">
+                            <div class="mock-header"></div>
+                            <div class="mock-flame">🔥</div>
+                            <div class="mock-row"></div>
+                            <div class="mock-row"></div>
+                            <div class="mock-row"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<
+<section id="features">
+    <div class="container">
+        <div class="section-head">
+            <h2>Что умеет Vegas+</h2>
+            <p>Полный набор инструментов для комфортного мониторинга жалоб</p>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    </svg>
+                </div>
+                <h3>Мониторинг разделов</h3>
+                <p>Следи за любыми разделами форума — новые жалобы появляются в реальном времени внутри приложения.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon tg">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+                    </svg>
+                </div>
+                <h3>Telegram-уведомления</h3>
+                <p>Жалобы с твоим ником приходят в Telegram через бота. Настройка в 2 клика — открой бота и нажми Start.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon award">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="6"/>
+                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+                    </svg>
+                </div>
+                <h3>15 медалей за активность</h3>
+                <p>Пламя-стрик, медали за количество жалоб, ночные и ранние заходы, коллекционные достижения.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon themes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="13.5" cy="6.5" r=".5"/>
+                        <circle cx="17.5" cy="10.5" r=".5"/>
+                        <circle cx="8.5" cy="7.5" r=".5"/>
+                        <circle cx="6.5" cy="12.5" r=".5"/>
+                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                    </svg>
+                </div>
+                <h3>10 тем с эффектами</h3>
+                <p>От классических цветов до Neon, Aurora, Matrix и Ice. Плюс Windows-уведомления.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon flame">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2c1 5 4 6 4 10a4 4 0 0 1-8 0c0-1 .5-2 1-2.5C9 11 9 9 12 2z"/>
+                    </svg>
+                </div>
+                <h3>Стрик «Пламя»</h3>
+                <p>Отмечайся каждый день — пламя растёт от маленького до максимального уровня. Лучший стрик сохраняется.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/>
+                        <path d="m19 9-5 5-4-4-3 3"/>
+                    </svg>
+                </div>
+                <h3>Статистика закрытий</h3>
+                <p>Считай сколько жалоб ты закрыл за период, по каждому разделу. Прогресс-бары и итоги.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section id="install">
+    <div class="container">
+        <div class="section-head">
+            <h2>Установка за 3 шага</h2>
+            <p>Расширение не из Chrome Web Store, поэтому ставится вручную. Занимает 30 секунд.</p>
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h4>Скачай архив</h4>
+                <p>Нажми кнопку «Скачать Vegas+» вверху и сохрани <code>vegas-plus.zip</code> на компьютер.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-num">2</div>
+                <h4>Распакуй</h4>
+                <p>Распакуй архив в любую папку. Внутри будет <code>manifest.json</code>, <code>content.js</code>, <code>background.js</code>.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-num">3</div>
+                <h4>Загрузи в Chrome</h4>
+                <p>Открой <code>chrome://extensions/</code>, включи <b>Режим разработчика</b> (справа сверху) и нажми <b>«Загрузить распакованное расширение»</b>. Выбери папку с Vegas+.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="container">
+        <div class="cta-box">
+            <h2>Готов начать?</h2>
+            <p>Скачай Vegas+ и получи первый мониторинг через 30 секунд после установки.</p>
+            <button class="btn btn-primary" onclick="downloadExtension()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Скачать Vegas+ v1.0
+            </button>
+
+            <div class="cta-meta">
+                <div class="cta-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Без телеметрии
+                </div>
+                <div class="cta-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 1 1-3-6.7L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                    </svg>
+                    Обновления бесплатно
+                </div>
+                <div class="cta-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Открытый код
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section id="faq">
+    <div class="container">
+        <div class="section-head">
+            <h2>Частые вопросы</h2>
+        </div>
+
+        <div class="faq">
+            <details class="faq-item">
+                <summary>Безопасно ли это расширение?</summary>
+                <div class="faq-answer">
+                    Да. Vegas+ работает только с <code>forum.arizona-rp.com</code> и <code>api.telegram.org</code>. Он не собирает личные данные и не отправляет ничего на сторонние серверы. Весь код открыт — можешь проверить содержимое <code>content.js</code> и <code>background.js</code>.
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary>Почему расширение не в Chrome Web Store?</summary>
+                <div class="faq-answer">
+                    Chrome Web Store требует платной регистрации разработчика и длительной модерации. Vegas+ распространяется напрямую — это быстрее для обновлений. Установка «вручную» занимает 30 секунд.
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary>Как подключить Telegram-уведомления?</summary>
+                <div class="faq-answer">
+                    Открой Vegas+ → Настройки → Telegram-уведомления → «Подключить». Появится код вида <code>/connect 123456</code>. Открой бота <a href="https://t.me/vegas_notification_bot" target="_blank">@vegas_notification_bot</a>, отправь ему этот код и всё — уведомления активируются автоматически.
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary>Не приходят уведомления. Что делать?</summary>
+                <div class="faq-answer">
+                    Проверь три вещи: 1) В Vegas+ → Настройки включены «Windows-уведомления» и Telegram; 2) В Telegram ты отправил боту команду <code>/connect</code> с кодом; 3) Разделы, где появляются жалобы, добавлены в мониторинг. Если ничего не помогло — напиши в Discord.
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary>Расширение перестанет работать после обновления форума?</summary>
+                <div class="faq-answer">
+                    Vegas+ обновляется при изменениях XenForo. Сейчас поддерживается 2.3 (самая свежая версия). Если что-то сломается — обновление выйдет в течение суток.
+                </div>
+            </details>
+
+            <details class="faq-item">
+                <summary>Можно ли смотреть мониторинг нескольких серверов?</summary>
+                <div class="faq-answer">
+                    Да. Добавляй любые разделы через Настройки — они все будут отслеживаться одновременно. Уведомления приходят для каждого раздела отдельно.
+                </div>
+            </details>
+        </div>
+    </div>
+</section>
+
+
+<footer>
+    <div class="foot">
+        <div class="foot-text">
+            © 2026 Vegas+ · Arizona RP · Сделано с ❤️
+        </div>
+        <div class="foot-links">
+            <a href="https://discord.gg/thmQmVSkT" target="_blank">Discord</a>
+            <a href="https://t.me/vegas_notification_bot" target="_blank">Telegram-бот</a>
+            <a href="https://forum.arizona-rp.com/" target="_blank">Форум</a>
+        </div>
+    </div>
+</footer>
+
+
+<div class="toast" id="toast">
+    <div class="toast-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+    </div>
+    <span id="toast-text">Загрузка началась!</span>
+</div>
+
+<script>
+
+function downloadExtension() {
+    const link = document.createElement('a');
+    link.href = 'vegas-plus.zip';
+    link.download = 'vegas-plus.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✅ Загрузка началась!');
+
+    setTimeout(() => {
+        showToast('📦 Распакуй архив и загрузи в chrome://extensions/', false, 5000);
+    }, 1500);
+}
+
+function showToast(text, error = false, duration = 3000) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+
+    toastText.textContent = text;
+    toast.classList.toggle('error', error);
+    toast.classList.add('show');
+
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
+
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+
+
+if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = 'fadeUp .6s cubic-bezier(.4,0,.2,1) backwards';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.feature, .step, .faq-item').forEach((el, i) => {
+        el.style.animationDelay = (i * 0.05) + 's';
+        observer.observe(el);
+    });
+}
+</script>
+
+</body>
+</html>
